@@ -29,13 +29,10 @@ export async function POST(req: Request) {
   // Generate JWT
   const token = generateToken({ userId: user.id, email: user.email });
 
-  // Set HttpOnly cookie
   const res = NextResponse.json({
     message: "Login successful",
     user: { id: user.id, email: user.email },
   });
 
-  setTokenCookie(res, token);
-
-  return res;
+  return setTokenCookie(res, token);
 }
