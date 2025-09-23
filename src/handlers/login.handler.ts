@@ -1,4 +1,4 @@
-"use server";
+"use client";
 import { LoginFormValues } from "@/app/(auth)/login/page";
 
 const loginHandler = async (values: LoginFormValues) => {

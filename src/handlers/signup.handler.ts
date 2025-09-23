@@ -1,4 +1,4 @@
-"use server";
+"use client";
 import { SignupFormValues } from "@/app/(auth)/signup/page";
 const signupHandler = async (
   values: Omit<SignupFormValues, "confirmPassword">,
