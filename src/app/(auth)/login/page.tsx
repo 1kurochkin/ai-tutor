@@ -8,6 +8,7 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import loginHandler from "@/handlers/login.handler";
+import { useRouter } from "next/navigation";
 
 const LoginFormSchema = z.object({
   email: z.email(),
@@ -20,6 +21,7 @@ export type LoginFormValues = z.infer<typeof LoginFormSchema>;
 
 export default function Login() {
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const { register, handleSubmit, formState, reset } = useForm<LoginFormValues>(
     {
@@ -34,9 +36,10 @@ export default function Login() {
       console.log(data, "Login");
       await loginHandler(data);
       reset();
+      router.replace("/tutor");
     } catch (e) {
       console.log(e, "ERROR");
-      toast("There was an Error logging in!");
+      toast((e as Error).message);
     }
     setLoading(false);
   };
