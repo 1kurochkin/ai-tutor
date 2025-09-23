@@ -4,7 +4,7 @@ const signupHandler = async (
   values: Omit<SignupFormValues, "confirmPassword">,
 ) => {
   console.log("signupHandler", values);
-  const response = await fetch("/api/auth/signup", {
+  const response = await fetch("http://localhost:3000/api/auth/signup", {
     method: "POST",
     body: JSON.stringify(values),
   });
