@@ -47,7 +47,7 @@ export async function POST(req: Request) {
       user: { id, email },
     });
 
-    setTokenCookie(res, token);
+    return setTokenCookie(res, token);
   } catch (err) {
     console.error("Signup error:", err);
     return NextResponse.json(
