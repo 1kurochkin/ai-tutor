@@ -8,6 +8,7 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import signupHandler from "@/handlers/signup.handler";
+import { useRouter } from "next/navigation";
 
 const SignupFormSchema = z
   .object({
@@ -29,6 +30,7 @@ export type SignupFormValues = z.infer<typeof SignupFormSchema>;
 
 export default function Signup() {
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const { register, handleSubmit, formState, reset } =
     useForm<SignupFormValues>({
@@ -43,9 +45,9 @@ export default function Signup() {
       await signupHandler(data);
       toast("Account has been created!");
       reset();
+      router.replace("/tutor");
     } catch (e) {
-      console.log(e, "ERROR");
-      toast("There was an Error creating account!");
+      toast((e as Error).message);
     }
     setLoading(false);
   };
