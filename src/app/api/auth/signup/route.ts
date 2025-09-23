@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 import { prisma } from "@/lib/prisma";
 import { generateToken } from "@/lib/jwt";
+import { setTokenCookie } from "@/lib/set-token-cookie";
 
 export async function POST(req: Request) {
   console.log("SIGNUP ROUTE");
@@ -46,12 +47,7 @@ export async function POST(req: Request) {
       user: { id, email },
     });
 
-    res.cookies.set("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-    });
+    setTokenCookie(res, token);
   } catch (err) {
     console.error("Signup error:", err);
     return NextResponse.json(
