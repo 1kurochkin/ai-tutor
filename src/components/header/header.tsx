@@ -2,7 +2,7 @@
 import React from "react";
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { getUserFromToken } from "@/lib/get-user-from-token";
+// import { getUserFromToken } from "@/lib/get-user-from-token";
 import NavButtons from "@/components/header/nav-buttons";
 
 const Header = async () => {
@@ -11,7 +11,7 @@ const Header = async () => {
 
   let user = null;
   if (token) {
-    user = await getUserFromToken(token);
+    // user = await getUserFromToken(token);
   }
 
   return (
