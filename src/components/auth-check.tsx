@@ -20,7 +20,7 @@ export default function AuthChecker() {
 
       if (isProtectedRoute || isAuthRoute) {
         try {
-          const response = await fetch('http://localhost:3000/api/auth/me')
+          const response = await fetch('/api/auth/me')
           const isAuthenticated = response.ok
 
           if (isProtectedRoute && !isAuthenticated) {
