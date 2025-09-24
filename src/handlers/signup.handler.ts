@@ -1,19 +1,21 @@
-"use client";
-import { SignupFormValues } from "@/app/(auth)/signup/page";
+'use client'
+import { SignupFormValues } from '@/app/(auth)/signup/page'
 const signupHandler = async (
-  values: Omit<SignupFormValues, "confirmPassword">,
+  values: Omit<SignupFormValues, 'confirmPassword'>,
 ) => {
-  console.log("signupHandler", values);
-  const response = await fetch("http://localhost:3000/api/auth/signup", {
-    method: "POST",
+  console.log('signupHandler', values)
+  const response = await fetch('/api/auth/signup', {
+    method: 'POST',
     body: JSON.stringify(values),
-  });
-  const data = await response.json();
-  console.log("signupHandler DATA", data);
+  })
+  const data = await response.json()
+  console.log('signupHandler DATA', data)
   if (!response.ok) {
-    throw new Error(data.error || "Failed to signup. Please try again later.");
+    throw new Error(
+      data.error || 'Failed to signup. Please try again later.',
+    )
   }
-  return data;
-};
+  return data
+}
 
-export default signupHandler;
+export default signupHandler

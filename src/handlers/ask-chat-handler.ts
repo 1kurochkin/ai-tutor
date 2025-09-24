@@ -7,7 +7,7 @@ const askChatHandler = async (
   question: string,
 ): Promise<{ answer: string }> => {
   console.log('askChatHandler', chatId, question)
-  const res = await fetch(`http://localhost:3000/api/chat/${chatId}/ask`, {
+  const res = await fetch(`/api/chat/${chatId}/ask`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ question, chatId }),
