@@ -2,21 +2,29 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Chat } from '@prisma/client'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { MenuIcon } from 'lucide-react'
 import { useState } from 'react'
+import { logoutHandler } from '@/handlers/logout.handler'
 
 export default function Sidebar({ chats }: { chats: Partial<Chat>[] }) {
   console.log(chats, 'Sidebar')
   const pathname = usePathname()
+  const router = useRouter()
   const [isOpen, setIsOpen] = useState(true)
   const handleToggleSidebar = () => {
     console.log('handleToggleSidebar')
     setIsOpen(prev => !prev)
   }
+
+  const handleLogout = async () => {
+    await logoutHandler()
+    router.replace('/')
+  }
+
   return (
     <div
-      className={`${!isOpen ? 'w-20' : 'w-64'} bg-black text-white flex flex-col transition-all duration-300 p-4 gap-4`}>
+      className={`${!isOpen ? 'w-20' : 'w-56'} bg-black text-white flex flex-col transition-all duration-300 p-4 gap-4`}>
       <div className={'flex justify-between items-center'}>
         {isOpen && (
           <Button asChild variant="outline">
@@ -49,13 +57,13 @@ export default function Sidebar({ chats }: { chats: Partial<Chat>[] }) {
             )}
           </div>
 
-          <form
-            action="http://localhost:3000/api/auth/logout"
-            method="post">
-            <Button className={'w-full'} type="submit" variant="outline">
-              Logout
-            </Button>
-          </form>
+          <Button
+            onClick={handleLogout}
+            className={'w-full'}
+            type="submit"
+            variant="outline">
+            Logout
+          </Button>
         </>
       )}
     </div>
