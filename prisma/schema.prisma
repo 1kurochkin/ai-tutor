@@ -18,4 +18,69 @@ model User {
   email     String   @unique
   password  String
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  files File[]
+  chats Chat[]
+
+  @@map("User")
+}
+
+model File {
+  id            String   @id @default(cuid())
+  filename      String
+  originalName  String
+  url           String
+  fileSize      Int
+  mimeType      String
+  extractedText String?  @db.Text // Full text content for AI context
+  pageCount     Int?
+  uploadedAt    DateTime @default(now())
+
+  // Foreign keys
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Relations
+  chats Chat[]
+
+  @@map("File")
+}
+
+model Chat {
+  id        String   @id @default(cuid())
+  title     String? // Auto-generated or user-set title
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Foreign keys
+  userId String
+  fileId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  file   File   @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  // Relations
+  messages Message[]
+
+  @@map("Chat")
+}
+
+model Message {
+  id        String      @id @default(cuid())
+  content   String      @db.Text
+  role      MessageRole // 'user' | 'assistant'
+  createdAt DateTime    @default(now())
+  metadata  Json? // Store additional data like page references, etc.
+
+  // Foreign keys
+  chatId String
+  chat   Chat   @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@map("Message")
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
 }
