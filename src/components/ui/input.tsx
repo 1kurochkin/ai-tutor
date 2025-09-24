@@ -11,7 +11,7 @@ function Input({
   ...props
 }: React.ComponentProps<"input"> & { label?: string; message?: string }) {
   return (
-    <div className={"relative"}>
+    <div className={"relative w-full"}>
       {label && (
         <Label className={cn("pb-2", message && "border-red-500 text-red-500")}>
           {label}

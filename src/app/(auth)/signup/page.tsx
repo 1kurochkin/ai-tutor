@@ -45,7 +45,7 @@ export default function Signup() {
       await signupHandler(data);
       toast("Account has been created!");
       reset();
-      router.replace("/tutor");
+      router.replace("/chat");
     } catch (e) {
       toast((e as Error).message);
     }

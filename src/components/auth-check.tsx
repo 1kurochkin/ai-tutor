@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
-const PROTECTED_ROUTES = ["/dashboard", "/tutor", "/pdf", "/chat"];
+const PROTECTED_ROUTES = ["/dashboard", "/chat", "/pdf", "/chat"];
 const AUTH_ROUTES = ["/login", "/signup"];
 
 export default function AuthChecker() {

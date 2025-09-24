@@ -11,7 +11,7 @@ export default function AuthLayout({
   return (
     <main className="flex min-h-screen overflow-hidden justify-center items-center px-12">
       <Button asChild className={"absolute top-4 left-4"}>
-        <Link href={"/home"}>Home</Link>
+        <Link href={"/"}>Home</Link>
       </Button>
 
       <div className={"w-[500px]"}>
