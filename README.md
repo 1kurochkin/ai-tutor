@@ -2,7 +2,7 @@
 
 AI-TUTOR is an AI-powered interactive learning assistant that allows users to study PDFs, ask questions, and receive AI-guided highlights and annotations.
 
-🚀 **Try Live**: [https://ai-tutor-qsfjket94-ivans-projects-d5999c55.vercel.app/](https://ai-tutor-qsfjket94-ivans-projects-d5999c55.vercel.app//)
+🚀 **Try Live**: [https://ai-tutor-indol.vercel.app/](https://ai-tutor-indol.vercel.app//)
 
 🔑 **Demo Account**
 - **Email:** contact@1kurochkin.com
