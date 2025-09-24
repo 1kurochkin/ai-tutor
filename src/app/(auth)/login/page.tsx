@@ -36,7 +36,7 @@ export default function Login() {
       console.log(data, "Login");
       await loginHandler(data);
       reset();
-      router.replace("/tutor");
+      router.replace("/chat");
     } catch (e) {
       console.log(e, "ERROR");
       toast((e as Error).message);

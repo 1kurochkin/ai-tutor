@@ -1,26 +1,27 @@
-"use server";
+"use client";
 import React from "react";
 import Link from "next/link";
-import { cookies } from "next/headers";
-// import { getUserFromToken } from "@/lib/get-user-from-token";
-import NavButtons from "@/components/header/nav-buttons";
+import { Button } from "@/components/ui/button";
 
-const Header = async () => {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("token")?.value;
-
-  let user = null;
-  if (token) {
-    // user = await getUserFromToken(token);
-  }
+const Header = () => {
+  const navigationRender = [
+    { label: "Login", href: "/login" },
+    { label: "Signup", href: "/signup" },
+  ];
 
   return (
-    <header className="border-b border-dashed border-black transition-transform duration-300">
+    <header className="fixed w-full border-b border-dashed border-black transition-transform duration-300">
       <nav className="px-6 lg:px-20 py-5 lg:py-6 w-full flex justify-between items-center">
-        <Link href="/home" className="font-mono text-xl hover:scale-105">
+        <Link href="/" className="font-mono text-xl hover:scale-105">
           {"< AI-TUTOR >"}
         </Link>
-        <NavButtons user={user} />
+        <div className="flex gap-x-2 items-center">
+          {navigationRender.map((item) => (
+            <Button key={item.label} asChild>
+              <Link href={item.href}>{item.label}</Link>
+            </Button>
+          ))}
+        </div>
       </nav>
     </header>
   );
