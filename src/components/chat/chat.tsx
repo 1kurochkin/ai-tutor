@@ -1,72 +1,58 @@
 'use client'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
-import askChatHandler from '@/handlers/ask-chat-handler'
-import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Message as MessagePrismaType, MessageRole } from '@prisma/client'
 import Message from '@/components/chat/message'
 import { useVoiceInput } from '@/hooks/useVoiceInput'
+import { MessagesLocalStateType } from '@/app/chat/[slug]/page'
 
 type ChatProps = {
-  chatId: string
   className?: string
-  messages: Array<Pick<MessagePrismaType, 'content' | 'role' | 'id'>>
+  messages: MessagesLocalStateType
+  loading: boolean
+  onFormSubmitHandler: (data: ChatFormValues) => Promise<void>
 }
 export type ChatFormValues = { question: string }
-const Chat = ({ chatId, className, messages }: ChatProps) => {
-  const [localMessages, setLocalMessages] = useState(messages)
-  const [loading, setLoading] = useState(false)
+const Chat = ({
+  onFormSubmitHandler,
+  className,
+  messages,
+  loading,
+}: ChatProps) => {
   const { register, handleSubmit, setValue, reset } =
     useForm<ChatFormValues>({
       mode: 'onChange',
     })
-
   const { listening, toggleListening } = useVoiceInput(transcript => {
     setValue('question', transcript)
   })
-
-  const onFormSubmitHandler = async ({ question }: ChatFormValues) => {
-    setLoading(true)
-    console.log('onFormSubmitHandler', question)
-    try {
-      const response = await askChatHandler(chatId, question)
-      console.log(response, 'response')
-      setLocalMessages(prev => [
-        ...prev,
-        {
-          id: Math.random() * 1000 + '',
-          role: MessageRole.user,
-          content: question,
-        },
-        {
-          id: Math.random() * 1000 + '',
-          role: MessageRole.assistant,
-          content: response.answer,
-        },
-      ])
-      reset()
-    } catch (e) {
-      toast((e as Error).message)
+  const containerRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const container = containerRef.current
+    if (container) {
+      container.scrollTop = container.scrollHeight
     }
-    setLoading(false)
+  }, [messages])
+
+  const submitHandler = async (data: ChatFormValues) => {
+    await onFormSubmitHandler(data)
+    reset()
   }
 
-  useEffect(() => {
-    console.log(localMessages, 'localMessages UPDATED')
-  }, [localMessages])
   return (
     <div
-      className={`flex flex-col justify-between w-4/12 items-end border-l-2 border-black border-dashed p-4 ${className}`}>
-      <div className="flex flex-col gap-4 w-full overflow-scroll h-[88vh] pb-4">
-        {localMessages?.map(message => (
+      className={`flex flex-col justify-between items-end border-l-2 border-black border-dashed p-4 ${className}`}>
+      <div
+        ref={containerRef}
+        className="flex flex-col gap-4 overflow-scroll h-[88vh] pb-4">
+        {messages?.map(message => (
           <Message key={message.id} {...message} />
         ))}
       </div>
       <form
-        className={'flex gap-2 w-full'}
-        onSubmit={handleSubmit(onFormSubmitHandler)}>
+        className={'flex gap-2'}
+        onSubmit={handleSubmit(submitHandler)}>
         <Input
           className={'resize-none'}
           disabled={loading}

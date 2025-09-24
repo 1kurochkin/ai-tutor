@@ -1,6 +1,6 @@
-import Image from 'next/image'
 import Header from '@/components/header/header'
 import React from 'react'
+
 const features = [
   {
     title: 'PDF & Document Analysis',

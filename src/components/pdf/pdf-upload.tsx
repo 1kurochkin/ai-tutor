@@ -20,7 +20,7 @@ export default function PdfUpload({
 
   return (
     <div className="w-full h-full flex justify-center items-center">
-      <div className={'flex flex-col gap-2 w-3/12'}>
+      <div className={'flex flex-col gap-2'}>
         <Input
           type="file"
           accept="application/pdf"

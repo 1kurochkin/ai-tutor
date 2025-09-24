@@ -40,12 +40,32 @@ export async function POST(req: NextRequest) {
   if (!chat)
     return NextResponse.json({ error: 'Chat not found' }, { status: 404 })
   console.log(chat, 'Chat History')
+
+  const systemPrompt = `You are an AI assistant that answers questions about a PDF and can highlight relevant content.
+
+When responding, you can include special annotation commands in your response using this format:
+[NAVIGATE:page_number:reason]
+[HIGHLIGHT:page_number:exact_text:context_before:context_after:color:description]
+[CIRCLE:page_number:exact_text:context_before:context_after:description]
+[UNDERLINE:page_number:exact_text:context_before:context_after:description]
+
+Rules for annotations:
+1. Use exact text from the PDF (case-sensitive)
+2. Include 2-5 words before and after for context (helps with disambiguation)
+3. Colors for highlights: yellow, red, blue, green, orange
+4. Keep text selections concise (1-20 words)
+5. Always reference page numbers when citing information
+
+Example response:
+"A virus is a microscopic infectious agent. [NAVIGATE:23:explaining virus definition] [HIGHLIGHT:23:infectious agent that replicates:is a:only inside:yellow:main definition] You can see this clearly illustrated in the diagram. [CIRCLE:23:virus structure diagram:see the:on page:diagram showing virus components]"
+
+Answer the user's question while incorporating relevant annotations to guide them to the important content.`
+
   // Build messages array for OpenAI
   const messages = [
     {
       role: 'system',
-      content:
-        'You are an AI assistant that answers questions about a PDF.',
+      content: systemPrompt,
     },
     {
       role: 'assistant',
@@ -58,33 +78,42 @@ export async function POST(req: NextRequest) {
     content: string
   }[]
 
-  // Send to OpenAI
-  const response = await generateText({
-    model: openai('gpt-4o-mini'),
-    messages,
-    maxOutputTokens: 500,
-  })
+  try {
+    // Send to OpenAI
+    const response = await generateText({
+      model: openai('gpt-4o-mini'),
+      messages,
+      maxOutputTokens: 500,
+    })
 
-  console.log(response.text, 'OpenAI answer')
-  // const response = {
-  //   text: 'hello' + Math.random() * 1000,
-  // }
+    console.log('Raw AI response:', response.text)
 
-  // Save new message
-  await prisma.message.create({
-    data: {
-      chatId,
-      role: MessageRole.user,
-      content: question,
-    },
-  })
-  await prisma.message.create({
-    data: {
-      chatId,
-      role: MessageRole.assistant,
-      content: response.text,
-    },
-  })
-  console.log('FINISH')
-  return NextResponse.json({ answer: response.text })
+    // Save new message
+    await prisma.message.create({
+      data: {
+        chatId,
+        role: MessageRole.user,
+        content: question,
+      },
+    })
+    await prisma.message.create({
+      data: {
+        chatId,
+        role: MessageRole.assistant,
+        content: response.text,
+      },
+    })
+    console.log('FINISH')
+    return NextResponse.json({
+      answer: response.text,
+      // annotations: parsedResponse.annotations,
+      // navigation: parsedResponse.navigation,
+    })
+  } catch (e) {
+    console.error('Error generating response:', e)
+    return NextResponse.json(
+      { error: 'Failed to generate response' },
+      { status: 500 },
+    )
+  }
 }
