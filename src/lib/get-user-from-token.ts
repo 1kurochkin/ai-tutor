@@ -14,7 +14,11 @@ export async function getUserFromToken(token: string) {
       token,
       process.env.JWT_SECRET as string,
     ) as TokenPayload;
-    return prisma.user.findUnique({
+    console.log(payload, "getUserFromToken");
+    if (!payload?.userId) {
+      return null;
+    }
+    return await prisma.user.findUnique({
       where: { id: payload.userId },
       select: { id: true, email: true },
     });
