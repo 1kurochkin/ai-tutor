@@ -39,22 +39,19 @@ export default function Sidebar({ chats }: { chats: Partial<Chat>[] }) {
       {isOpen && (
         <>
           <div className="mt-8 overflow-y-auto h-full flex flex-col gap-2">
-            {chats.length === 0 ? (
-              <span>Chats</span>
-            ) : (
-              chats.map(chat => (
-                <Button
-                  asChild
-                  key={chat.id}
-                  className={
-                    pathname.includes(chat.id || '') ? 'bg-gray-700' : ''
-                  }>
-                  <Link href={`/chat/${chat.id}`}>
-                    {chat.title || 'Untitled Chat'}
-                  </Link>
-                </Button>
-              ))
-            )}
+            <span>Chats</span>
+            {chats.map(chat => (
+              <Button
+                asChild
+                key={chat.id}
+                className={
+                  pathname.includes(chat.id || '') ? 'bg-gray-700' : ''
+                }>
+                <Link href={`/chat/${chat.id}`}>
+                  {chat.title || 'Untitled Chat'}
+                </Link>
+              </Button>
+            ))}
           </div>
 
           <Button
