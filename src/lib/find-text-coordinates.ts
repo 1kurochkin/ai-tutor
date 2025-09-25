@@ -43,7 +43,7 @@ export async function findTextCoordinates(
 
   // Convert items to words with coords
   const words = items.map((item: any) => {
-    const [a, b, c, d, e, f] = item.transform
+    const [,,, e, f] = item.transform
     return {
       str: item.str,
       pdfX: e,
@@ -70,9 +70,6 @@ export async function findTextCoordinates(
 
     if (normalizedChunkText.includes(target)) {
       console.log("FOUND! Using chunk:", chunk)
-
-      const first = chunk[0]
-      const last = chunk[chunk.length - 1]
 
       // Calculate bounding box in PDF coordinates - use exact item positions
       const pdfX = Math.min(...chunk.map(w => w.pdfX)) // Leftmost X
