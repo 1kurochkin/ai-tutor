@@ -19,7 +19,7 @@ export default function Sidebar({ chats }: { chats: Partial<Chat>[] }) {
 
   const handleLogout = async () => {
     await logoutHandler()
-    router.replace('/')
+    router.replace('/home')
   }
 
   return (
