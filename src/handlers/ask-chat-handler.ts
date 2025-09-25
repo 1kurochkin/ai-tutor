@@ -1,11 +1,18 @@
 'use client'
 
 import { toast } from 'sonner'
+import {Annotation} from "@/components/pdf/pdf-view";
+
+interface AskChatResponse {
+  answer: string
+  annotations?: Annotation[]
+  navigation?: number
+}
 
 const askChatHandler = async (
   chatId: string,
   question: string,
-): Promise<{ answer: string }> => {
+): Promise<AskChatResponse> => {
   console.log('askChatHandler', chatId, question)
   const res = await fetch(`/api/chat/${chatId}/ask`, {
     method: 'POST',
