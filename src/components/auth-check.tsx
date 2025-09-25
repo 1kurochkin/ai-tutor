@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 
 const PROTECTED_ROUTES = ['/chat']
-const AUTH_ROUTES = ['/login', '/signup']
+const AUTH_ROUTES = ['/login', '/signup', "/home"]
 
 export default function AuthChecker() {
   const router = useRouter()
@@ -24,13 +24,13 @@ export default function AuthChecker() {
           const isAuthenticated = response.ok
 
           if (isProtectedRoute && !isAuthenticated) {
-            router.push('/')
+            router.push('/home')
           } else if (isAuthRoute && isAuthenticated) {
             router.push('/chat')
           }
         } catch (error) {
           if (isProtectedRoute) {
-            router.push('/')
+            router.push('/home')
           }
         }
       }
