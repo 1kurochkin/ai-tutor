@@ -1,12 +1,21 @@
 'use client'
 
-import { Card, CardContent } from '@/components/ui/card'
-import { cn } from '@/lib/utils'
-import { Message as MessagePrismaType, MessageRole } from '@prisma/client'
+import {Card, CardContent} from '@/components/ui/card'
+import {cn} from '@/lib/utils'
+import {Message as MessagePrismaType, MessageRole} from '@prisma/client'
+import {Button} from '@/components/ui/button'
 
-type MessageProps = Pick<MessagePrismaType, 'role' | 'content'>
+type MessageProps = Partial<MessagePrismaType> & {
+  setRedirectPage?: () => void
+  showAnnotations?: () => void | undefined
+}
 
-export default function Message({ role, content }: MessageProps) {
+export default function Message({
+  role,
+  content,
+  setRedirectPage,
+  showAnnotations,
+}: MessageProps) {
   return (
     <div
       className={cn(
@@ -24,8 +33,20 @@ export default function Message({ role, content }: MessageProps) {
             ? 'bg-primary text-primary-foreground rounded-br-none'
             : 'bg-muted text-muted-foreground rounded-bl-none',
         )}>
-        <CardContent className="p-0">
+        <CardContent className="p-0 flex flex-col gap-3">
           <p className="text-base whitespace-pre-wrap">{content}</p>
+          {setRedirectPage && role === MessageRole.assistant && (
+            <Button
+              onClick={setRedirectPage}
+              size={'sm'}>
+              Follow to the page
+            </Button>
+          )}
+          {showAnnotations && role === MessageRole.assistant && (
+            <Button onClick={showAnnotations} size={'sm'}>
+              Show annotations
+            </Button>
+          )}
         </CardContent>
       </Card>
 
