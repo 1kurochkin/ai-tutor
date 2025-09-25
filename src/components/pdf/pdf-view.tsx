@@ -1,177 +1,184 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
-import type { PDFDocumentProxy } from 'pdfjs-dist'
-import { Button } from '@/components/ui/button'
-import { Loader2 } from 'lucide-react'
+import {useCallback, useEffect, useRef, useState} from 'react'
+import {toast} from 'sonner'
+import PdfViewControls from '@/components/pdf/pdf-view-controls'
+import {PDFDocumentProxy, PDFPageProxy} from 'pdfjs-dist'
+import {findTextCoordinates} from '@/lib/find-text-coordinates'
+import {annotatePdfClient} from '@/lib/annotate-pdf'
 
 const PDFDocument = dynamic(
-  () => import('react-pdf').then(mod => ({ default: mod.Document })),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="animate-pulse bg-gray-300 h-96 rounded-md"></div>
-    ),
-  },
+    () => import('react-pdf').then(mod => ({default: mod.Document})),
+    {ssr: false, loading: () => <div className="animate-pulse bg-gray-300 h-96 rounded-md"/>}
 )
 
 const PDFPage = dynamic(
-  () => import('react-pdf').then(mod => ({ default: mod.Page })),
-  { ssr: false },
+    () => import('react-pdf').then(mod => ({default: mod.Page})),
+    {ssr: false}
 )
 
 // Set PDF.js worker on client
 if (typeof window !== 'undefined') {
-  import('react-pdf').then(({ pdfjs }) => {
-    pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
-  })
-}
-
-interface Annotation {
-  id: string
-  type: 'highlight' | 'circle' | 'underline'
-  coordinates?: { x: number; y: number; width: number; height: number }
-  text?: string
-  color: string
-}
-
-interface PDFViewerProps {
-  url: string
-  annotations?: Annotation[]
-  onLoadSuccess?: (pdf: PDFDocumentProxy) => void
-  className?: string
-}
-
-export default function PDFViewer({
-  url,
-  annotations,
-  className,
-  onLoadSuccess,
-}: PDFViewerProps) {
-  const [totalPages, setTotalPages] = useState(0)
-  const [pageSize, setPageSize] = useState({ width: 800, height: 0 })
-  const [isMounted, setIsMounted] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [errorMsg, setErrorMsg] = useState('')
-  const containerRef = useRef<HTMLDivElement | null>(null)
-  const [pageNumber, setPageNumber] = useState(1)
-
-  // Mount check
-  useEffect(() => setIsMounted(true), [])
-
-  // Track container width
-  useEffect(() => {
-    const resizeHandler = () => {
-      if (containerRef.current) {
-        const width = Math.min(containerRef.current.clientWidth - 40, 800)
-        setPageSize(prev => ({ ...prev, width }))
-      }
-    }
-    resizeHandler()
-    window.addEventListener('resize', resizeHandler)
-    return () => window.removeEventListener('resize', resizeHandler)
-  }, [])
-
-  const handleDocumentLoad = (pdf: PDFDocumentProxy) => {
-    setTotalPages(pdf.numPages)
-    setLoading(false)
-    onLoadSuccess?.(pdf)
-  }
-
-  const handleDocumentError = (err: Error) => {
-    console.error('PDF load failed:', err)
-    setErrorMsg('Unable to load PDF. Try again.')
-    setLoading(false)
-  }
-
-  const handlePageRender = (page: {
-    getViewport: (opts: { scale: number }) => {
-      width: number
-      height: number
-    }
-  }) => {
-    const viewport = page.getViewport({ scale: 1 })
-    setPageSize({
-      width: pageSize.width,
-      height: (viewport.height / viewport.width) * pageSize.width,
+    import('react-pdf').then(({pdfjs}) => {
+        pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
     })
-  }
-
-  if (!isMounted) {
-    return (
-      <div className="flex flex-col h-full bg-gray-50">
-        <div className="flex items-center justify-center p-4 text-gray-500">
-          Loading PDF viewer...
-        </div>
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-pulse bg-gray-300 h-96 w-full max-w-3xl rounded-md"></div>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className={`flex flex-col h-full bg-gray-50 ${className}`}>
-      {/* Controls */}
-      <div className="flex items-center justify-between p-4 bg-white border-b">
-        <Button
-          onClick={() => setPageNumber(Math.max(1, pageNumber - 1))}
-          disabled={pageNumber <= 1 || loading}>
-          Prev
-        </Button>
-        <span>
-          {loading ? 'Loading...' : `Page ${pageNumber} of ${totalPages}`}
-        </span>
-        <Button
-          onClick={() =>
-            setPageNumber(Math.min(totalPages, pageNumber + 1))
-          }
-          disabled={pageNumber >= totalPages || loading}>
-          Next
-        </Button>
-      </div>
-
-      {/* PDF Container */}
-      <div
-        ref={containerRef}
-        className="flex-1 overflow-auto flex justify-center p-4">
-        {errorMsg ? (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <div className="text-red-500 mb-2">⚠️</div>
-            <p className="text-red-600">{errorMsg}</p>
-            <Button
-              onClick={() => {
-                setErrorMsg('')
-                setLoading(true)
-              }}>
-              Retry
-            </Button>
-          </div>
-        ) : (
-          <div className="relative">
-            <PDFDocument
-              file={url}
-              onLoadSuccess={handleDocumentLoad}
-              onLoadError={handleDocumentError}
-              className="shadow-md"
-              loading={
-                <Loader2 className="animate-spin w-8 h-8 text-blue-500 mx-auto" />
-              }>
-              <PDFPage
-                pageNumber={pageNumber}
-                width={pageSize.width}
-                renderTextLayer={false}
-                renderAnnotationLayer={false}
-                onRenderSuccess={handlePageRender}
-                loading={
-                  <Loader2 className="animate-spin w-8 h-8 text-blue-500 mx-auto" />
-                }
-              />
-            </PDFDocument>
-          </div>
-        )}
-      </div>
-    </div>
-  )
 }
+
+export interface Annotation {
+    id: string
+    type: 'highlight' | 'circle'
+    currentPage: number
+    coordinates: { x: number; y: number; width: number; height: number }
+    color?: string
+    textReference?: string
+}
+
+export interface PDFViewport {
+    width: number
+    height: number
+    scale: number
+}
+
+type PdfView2Props = {
+    url: string
+    className: string
+    redirectPage?: number
+    annotations?: Annotation[]
+}
+
+const PdfView = ({url, className, redirectPage, annotations = []}: PdfView2Props) => {
+    const [currentPage, setCurrentPage] = useState(1)
+    const [totalPages, setTotalPages] = useState(0)
+    const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null)
+    const [viewport, setViewport] = useState<PDFViewport>({width: 0, height: 0, scale: 1})
+    const [pdfBytes, setPdfBytes] = useState<ArrayBuffer | null>(null)
+    const [renderPDFUrl, setRenderPDFUrl] = useState(url)
+    const containerRef = useRef<HTMLDivElement>(null)
+    const lastAnnotationsRef = useRef<string>('')
+    // Fetch PDF bytes once
+    useEffect(() => {
+        let canceled = false
+        fetch(url)
+            .then(res => res.arrayBuffer())
+            .then(bytes => {
+                if (!canceled) setPdfBytes(bytes)
+            })
+            .catch(err => console.error('Failed to fetch PDF', err))
+        return () => {
+            canceled = true
+        }
+    }, [url])
+
+    // Apply annotations only once per unique set
+    useEffect(() => {
+        if (!pdfBytes || !pdf || !annotations.length) return
+
+        const annotationsKey = JSON.stringify(
+            annotations.map(a => ({id: a.id, textReference: a.textReference}))
+        )
+        if (lastAnnotationsRef.current === annotationsKey) return
+        lastAnnotationsRef.current = annotationsKey
+
+        const applyAnnotations = async () => {
+            console.log("applyAnnotations")
+            try {
+                const updatedAnnotations: Annotation[] = []
+
+                for (const ann of annotations) {
+                    const page = await pdf.getPage(ann.currentPage)
+
+                    if (page && ann.textReference) {
+                        const coordinates = await findTextCoordinates(page, ann.textReference, viewport.scale)
+                        updatedAnnotations.push({...ann, coordinates})
+                    }
+                }
+                console.log("updatedAnnotations", updatedAnnotations)
+                if (!updatedAnnotations.length) return
+
+                const annotatedPdf = await annotatePdfClient(pdfBytes, updatedAnnotations)
+                // @ts-ignore
+                const blob = new Blob([annotatedPdf], {type: 'application/pdf'})
+                const annotatedUrl = URL.createObjectURL(blob)
+                console.log("annotatedUrl", annotatedUrl)
+                // Revoke old URL if any
+                if (renderPDFUrl.startsWith('blob:')) URL.revokeObjectURL(renderPDFUrl)
+
+                setRenderPDFUrl(annotatedUrl)
+            } catch (err) {
+                console.error('Failed to apply annotations', err)
+                toast('Failed to apply annotations!')
+            }
+        }
+
+        applyAnnotations()
+    }, [annotations, pdf, pdfBytes, viewport.scale, renderPDFUrl])
+
+    // Handle page resize
+    useEffect(() => {
+        const resizeHandler = () => {
+            if (!containerRef.current) return
+            const width = Math.min(containerRef.current.clientWidth - 40, 800)
+            setViewport(prev => ({...prev, width}))
+        }
+        resizeHandler()
+        window.addEventListener('resize', resizeHandler)
+        return () => window.removeEventListener('resize', resizeHandler)
+    }, [])
+
+    // Redirect from AI response
+    useEffect(() => {
+        if (redirectPage) setCurrentPage(redirectPage)
+    }, [redirectPage])
+
+    const handleDocumentLoad = useCallback((pdf: PDFDocumentProxy) => {
+        setTotalPages(pdf.numPages)
+        setPdf(pdf)
+    }, [])
+
+    const handleDocumentLoadError = (err: Error) => {
+        console.error('PDF load failed:', err)
+        toast('Error loading PDF!')
+    }
+
+    const handlePageRender = useCallback((page: PDFPageProxy) => {
+        const viewportObj = page.getViewport({scale: 1})
+        const containerWidth = containerRef.current?.clientWidth || 800
+        const scale = containerWidth / viewportObj.width
+
+        setViewport({width: viewportObj.width * scale, height: viewportObj.height * scale, scale})
+    }, [])
+
+    const onClickNext = () => setCurrentPage(prev => Math.min(totalPages, prev + 1))
+    const onClickPrev = () => setCurrentPage(prev => Math.max(1, prev - 1))
+
+    return (
+        <div ref={containerRef} className={`relative flex flex-col bg-gray-50 ${className}`}>
+            <PdfViewControls
+                disabledNext={currentPage >= totalPages}
+                disabledPrev={currentPage <= 1}
+                onClickNext={onClickNext}
+                onClickPrev={onClickPrev}
+                text={`Page ${currentPage} of ${totalPages}`}
+            />
+            <div className="overflow-auto">
+                <PDFDocument
+                    file={renderPDFUrl}
+                    onLoadSuccess={handleDocumentLoad}
+                    onLoadError={handleDocumentLoadError}
+                    className="shadow-md"
+                >
+                    <PDFPage
+                        pageNumber={currentPage}
+                        width={viewport.width}
+                        onRenderSuccess={handlePageRender}
+                        renderTextLayer={false}
+                        renderAnnotationLayer={false}
+                    />
+                </PDFDocument>
+            </div>
+        </div>
+    )
+}
+
+export default PdfView
