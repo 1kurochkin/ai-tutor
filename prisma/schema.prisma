@@ -67,11 +67,12 @@ model Chat {
 }
 
 model Message {
-  id        String      @id @default(cuid())
-  content   String      @db.Text
-  role      MessageRole // 'user' | 'assistant'
-  createdAt DateTime    @default(now())
-  metadata  Json? // Store additional data like page references, etc.
+  id          String      @id @default(cuid())
+  content     String      @db.Text
+  role        MessageRole // 'user' | 'assistant'
+  createdAt   DateTime    @default(now())
+  navigation  Int?
+  annotations String?
 
   // Foreign keys
   chatId String

@@ -1,17 +1,20 @@
 'use client'
-import React, { useEffect, useRef } from 'react'
-import { useForm } from 'react-hook-form'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
+import React, {useEffect, useRef} from 'react'
+import {useForm} from 'react-hook-form'
+import {Input} from '@/components/ui/input'
+import {Button} from '@/components/ui/button'
 import Message from '@/components/chat/message'
-import { useVoiceInput } from '@/hooks/useVoiceInput'
-import { MessagesLocalStateType } from '@/app/chat/[slug]/page'
+import {useVoiceInput} from '@/hooks/useVoiceInput'
+import {MessagesLocalStateType} from "@/app/chat/[slug]/page";
+import {Annotation} from "@/components/pdf/pdf-view";
 
-type ChatProps = {
+export type ChatProps = {
   className?: string
   messages: MessagesLocalStateType
   loading: boolean
   onFormSubmitHandler: (data: ChatFormValues) => Promise<void>
+  setRedirectPage: (redirectPage: number) => void
+  showAnnotations: (annotations: Annotation[]) => void
 }
 export type ChatFormValues = { question: string }
 const Chat = ({
@@ -19,6 +22,8 @@ const Chat = ({
   className,
   messages,
   loading,
+  setRedirectPage,
+  showAnnotations,
 }: ChatProps) => {
   const { register, handleSubmit, setValue, reset } =
     useForm<ChatFormValues>({
@@ -47,7 +52,24 @@ const Chat = ({
         ref={containerRef}
         className="flex flex-col gap-4 overflow-scroll h-[88vh] pb-4">
         {messages?.map(message => (
-          <Message key={message.id} {...message} />
+          <Message
+            setRedirectPage={
+              message.navigation
+                ? () => setRedirectPage(message.navigation!)
+                : undefined
+            }
+            showAnnotations={
+              message?.annotations?.length
+                ? () => {
+                    showAnnotations(message.annotations!)
+                    setRedirectPage(message.navigation!)
+                  }
+                : undefined
+            }
+            key={message.id}
+            role={message.role}
+            content={message.content}
+          />
         ))}
       </div>
       <form
