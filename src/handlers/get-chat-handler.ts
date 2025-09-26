@@ -35,7 +35,7 @@ const getChatHandler = async (chatId: string) => {
                     originalName: true,
                     url: true,
                     pageCount: true,
-                    extractedText: true,
+                    content: true,
                 },
             },
             messages: true,
