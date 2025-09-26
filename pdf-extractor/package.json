@@ -1,0 +1,14 @@
+{
+  "name": "pdf-extractor",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "fast-xml-parser": "^5.2.5",
+    "fs-extra": "^11.3.2",
+    "multer": "^2.0.2"
+  }
+}
