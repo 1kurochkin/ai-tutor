@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
-import { generateToken } from "@/lib/jwt";
-import { setTokenCookie } from "@/lib/set-token-cookie";
+import {generateToken, setTokenCookie} from "@/lib/auth";
+
 
 export async function POST(req: Request) {
   const { email, password } = await req.json();
