@@ -181,7 +181,16 @@ Download and install Poppler from: https://blog.alivate.com.au/poppler-windows/
 npm start
 ```
 
-The service will run on `http://localhost:3000` (separate from the main app).
+The service will run on `http://localhost:3001` (separate from the main app).
+
+### 5. Update Main App Configuration
+
+Once service started, update your main application's PDF extractor URL in:
+
+`.env` config:
+```env
+PDF_EXTRACTOR_ENDPOINT="http://localhost:3001/extract"
+```
 
 ---
 
