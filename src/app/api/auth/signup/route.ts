@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
+import {NextResponse} from "next/server";
 import bcrypt from "bcrypt";
-import { prisma } from "@/lib/prisma";
-import { generateToken } from "@/lib/jwt";
-import { setTokenCookie } from "@/lib/set-token-cookie";
+import {prisma} from "@/lib/prisma";
+import {generateToken, setTokenCookie} from "@/lib/auth";
+
 
 export async function POST(req: Request) {
   console.log("SIGNUP ROUTE");
