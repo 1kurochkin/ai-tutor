@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
         try {
             pdfTextExtractionResult = await parseTextFromPDF(file)
             const response = await fetch(
-                "https://pdf-extractor-production-7963.up.railway.app/extract",
+                process.env.PDF_EXTRACTOR_ENDPOINT!,
                 {
                     method: "POST",
                     body: formData,
