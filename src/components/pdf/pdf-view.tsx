@@ -5,8 +5,8 @@ import {useCallback, useEffect, useRef, useState} from 'react'
 import {toast} from 'sonner'
 import PdfViewControls from '@/components/pdf/pdf-view-controls'
 import {PDFDocumentProxy, PDFPageProxy} from 'pdfjs-dist'
-import {findTextCoordinates} from '@/lib/find-text-coordinates'
-import {annotatePdfClient} from '@/lib/annotate-pdf'
+import {findTextCoordinates} from "@/lib/pdf/get-text-coords";
+import {annotatePDF} from "@/lib/pdf/annotate";
 
 const PDFDocument = dynamic(
     () => import('react-pdf').then(mod => ({default: mod.Document})),
@@ -29,7 +29,7 @@ export interface Annotation {
     id: string
     type: 'highlight' | 'circle'
     currentPage: number
-    coordinates: { x: number; y: number; width: number; height: number }
+    coordinates?: { x: number; y: number; width: number; height: number }
     color?: string
     textReference?: string
 }
@@ -88,15 +88,20 @@ const PdfView = ({url, className, redirectPage, annotations = []}: PdfView2Props
                 for (const ann of annotations) {
                     const page = await pdf.getPage(ann.currentPage)
 
-                    if (page && ann.textReference) {
-                        const coordinates = await findTextCoordinates(page, ann.textReference, viewport.scale)
-                        updatedAnnotations.push({...ann, coordinates})
+                    if (page && ann) {
+                        if (ann.type === "highlight") {
+                            const coordinates = await findTextCoordinates(page, ann.textReference!, viewport.scale)
+                            updatedAnnotations.push({...ann, coordinates})
+                        } else {
+                            updatedAnnotations.push(ann)
+                        }
+
                     }
                 }
                 console.log("updatedAnnotations", updatedAnnotations)
                 if (!updatedAnnotations.length) return
 
-                const annotatedPdf = await annotatePdfClient(pdfBytes, updatedAnnotations)
+                const annotatedPdf = await annotatePDF(pdfBytes, updatedAnnotations)
                 // @ts-ignore
                 const blob = new Blob([annotatedPdf], {type: 'application/pdf'})
                 const annotatedUrl = URL.createObjectURL(blob)
@@ -164,6 +169,7 @@ const PdfView = ({url, className, redirectPage, annotations = []}: PdfView2Props
             <div className="overflow-auto">
                 <PDFDocument
                     file={renderPDFUrl}
+                    // @ts-ignore
                     onLoadSuccess={handleDocumentLoad}
                     onLoadError={handleDocumentLoadError}
                     className="shadow-md"
@@ -171,6 +177,7 @@ const PdfView = ({url, className, redirectPage, annotations = []}: PdfView2Props
                     <PDFPage
                         pageNumber={currentPage}
                         width={viewport.width}
+                        // @ts-ignore
                         onRenderSuccess={handlePageRender}
                         renderTextLayer={false}
                         renderAnnotationLayer={false}

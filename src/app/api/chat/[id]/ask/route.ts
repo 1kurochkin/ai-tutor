@@ -1,11 +1,18 @@
 import {prisma} from '@/lib/prisma'
 import {openai} from '@ai-sdk/openai'
 import {NextRequest, NextResponse} from 'next/server'
-import {getUserFromToken} from '@/lib/get-user-from-token'
 import {generateText} from 'ai'
 import {MessageRole} from '@prisma/client'
-import {parseAIResponse} from '@/lib/parse-ai-response'
-
+import {parseChatAIResponse} from '@/lib/ai'
+import {getUserFromToken} from "@/lib/auth";
+export interface ExtractedImage {
+    page: number;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    base64: string;
+}
 export async function POST(req: NextRequest) {
     console.log('CHAT ASK ROUTE API')
     // Check authentication
@@ -44,26 +51,32 @@ export async function POST(req: NextRequest) {
 
     const systemPrompt = `
 You are an AI assistant that answers questions about a PDF document.  
-You MUST always return two parts in your response:
+You receive structured content for each page, including both text and image descriptions.
+
+## Your Task
+Always return two parts in your response:
 1. A natural language answer to the user’s question.  
 2. At least one annotation command in the required format, whenever relevant text or visuals exist.
 
 ## Annotation Commands
 - [NAVIGATE:page_number]
-- [CIRCLE:page_number:exact_text]
+- [HIGHLIGHT:page_number:exact_text]
+- [CIRCLE:page_number:x:y:width:height]
 
 ### Annotation Rules
-1. Always use **exact text from the PDF** (case-sensitive).
-2. Keep text selections concise (1–20 words).
-3. Always include **[NAVIGATE:page_number]** when you use CIRCLE.
-4. Use:
-   - HIGHLIGHT → for important text passages OR for key terms, definitions, or keywords 
-   - CIRCLE → for images, diagrams, or visual elements  
+1. Always use **exact text from the PDF** (case-sensitive) for highlights.  
+2. Keep text selections concise (1–20 words).  
+3. Always include **[NAVIGATE:page_number]** when you use HIGHLIGHT or CIRCLE.  
+4. For images:
+   - Use the provided **description field** to understand what the image contains.  
+   - When relevant, annotate the image with its **objectNumber** using [CIRCLE:page_number:x:y:width:height].  
+   - Never invent new object numbers.  
 
 ## Response Rules
-1. Responses must include BOTH natural language + annotation(s).  
-   - If you find relevant content, annotate it.  
-   - If no relevant content exists, say so explicitly and still provide a natural language response.  
+1. Responses must include BOTH a natural language answer + annotation(s).  
+   - If relevant text exists → use HIGHLIGHT.  
+   - If relevant image exists (based on its description) → use CIRCLE.  
+   - If nothing relevant exists → say so explicitly.  
 2. Annotations must be in the strict command format (no extra words inside brackets).  
 3. You can include multiple annotations in one response.
 
@@ -74,7 +87,7 @@ Assistant:
 "A virus is a microscopic infectious agent that replicates inside living hosts.  
 [NAVIGATE:23] [HIGHLIGHT:23:infectious agent that replicates]  
 You can also see this illustrated in the diagram.  
-[CIRCLE:23:virus structure diagram]"
+[CIRCLE:23:300:400:200"]"
 `
 
     // Build messages array for OpenAI
@@ -85,7 +98,8 @@ You can also see this illustrated in the diagram.
         },
         {
             role: 'assistant',
-            content: `PDF content:\n\n${chat.file.extractedText}`,
+            // content: `PDF content:\n\n${chat.file.extractedText}`,
+            content: `PDF content:\n\n${chat.file.content}`,
         },
         ...chat.messages,
         {role: 'user', content: question},
@@ -97,7 +111,7 @@ You can also see this illustrated in the diagram.
     try {
         // Send to OpenAI
         const response = await generateText({
-            model: openai('gpt-4o-mini'),
+            model: openai('gpt-4o'),
             messages,
             maxOutputTokens: 500,
         })
@@ -105,7 +119,7 @@ You can also see this illustrated in the diagram.
         console.log('Raw AI response:', response.text)
 
         // Parse the response to extract annotations and clean text
-        const {cleanText, annotations, navigation} = parseAIResponse(
+        const {cleanText, annotations, navigation} = parseChatAIResponse(
             response.text,
         )
 

@@ -28,15 +28,15 @@ model User {
 }
 
 model File {
-  id            String   @id @default(cuid())
-  filename      String
-  originalName  String
-  url           String
-  fileSize      Int
-  mimeType      String
-  extractedText String?  @db.Text // Full text content for AI context
-  pageCount     Int?
-  uploadedAt    DateTime @default(now())
+  id           String   @id @default(cuid())
+  filename     String
+  originalName String
+  url          String
+  fileSize     Int
+  mimeType     String
+  content      String?  @db.Text // Full text content for AI context
+  pageCount    Int?
+  uploadedAt   DateTime @default(now())
 
   // Foreign keys
   userId String
