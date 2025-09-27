@@ -6,7 +6,7 @@ import {generateText} from "ai";
 import {openai} from '@ai-sdk/openai'
 import {getUserFromToken} from "@/lib/auth";
 import {parseTextFromPDF, PDFExtractionResult} from "@/lib/pdf/parse-text";
-import {ExtractedImage} from "@/app/api/chat/[id]/ask/route";
+import {ImagesCoordinatesResponse} from "@/app/api/chat/[id]/ask/route";
 
 
 export async function POST(request: NextRequest) {
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
 
         // Extract data from PDF
         let pdfTextExtractionResult: PDFExtractionResult
-        let pdfImagesExtractionResult: ExtractedImage[] = []
+        let pdfImagesExtractionResult: ImagesCoordinatesResponse[] = []
 
         try {
             pdfTextExtractionResult = await parseTextFromPDF(file)
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
 
         if (pdfImagesExtractionResult.length) {
             // AI Describe images from PDF
-            let describedImages: Omit<ExtractedImage, "base64">[] = []
+            let describedImages: Omit<ImagesCoordinatesResponse, "base64">[] = []
             try {
                 const systemPrompt = `
 You are an AI assistant. Analyze the images provided and return a concise, **one-sentence description** of each image.  

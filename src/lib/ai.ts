@@ -31,17 +31,20 @@ export function parseChatAIResponse(response: string): ParsedAIResponse {
 
     // Parse CIRCLE commands
 // Parse CIRCLE commands with coordinates
-    const circleRegex = /\[CIRCLE:(\d+):(\d+\.?\d*):(\d+\.?\d*):(\d+\.?\d*):(\d+\.?\d*)]/g;
+    const circleRegex = /\[CIRCLE:(\d+):(\d+\.?\d*):(\d+\.?\d*):(\d+\.?\d*):(\d+\.?\d*):(\d+\.?\d*):(\d+\.?\d*)]/g;
     while ((match = circleRegex.exec(response)) !== null) {
         const currentPage = parseInt(match[1], 10);
         const x = parseFloat(match[2]);
         const y = parseFloat(match[3]);
         const width = parseFloat(match[4]);
         const height = parseFloat(match[5]);
+        const pageWidth = parseFloat(match[6]);
+        const pageHeight = parseFloat(match[7]);
 
         annotations.push({
             id: `circle-${Date.now()}-${Math.random()}`,
             type: 'circle',
+            pageSize: {width: pageWidth, height: pageHeight},
             currentPage,
             coordinates: { x, y, width, height },
             color: '#ff6b6b',
