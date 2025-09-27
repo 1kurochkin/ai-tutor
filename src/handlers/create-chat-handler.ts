@@ -1,13 +1,14 @@
 'use client'
 
 import { toast } from 'sonner'
+import {apiFetch} from "@/lib/auth";
 
 const createChatHandler = async (file: File) => {
   console.log('createChatHandler')
   const formData = new FormData()
   formData.append('file', file)
 
-  const res = await fetch('/api/chat/create', {
+  const res = await apiFetch('/api/chat/create', {
     method: 'POST',
     body: formData,
     credentials: 'include',

@@ -2,6 +2,7 @@
 
 import { toast } from 'sonner'
 import {Annotation} from "@/components/pdf/pdf-view";
+import {apiFetch} from "@/lib/auth";
 
 interface AskChatResponse {
   answer: string
@@ -14,7 +15,7 @@ const askChatHandler = async (
   question: string,
 ): Promise<AskChatResponse> => {
   console.log('askChatHandler', chatId, question)
-  const res = await fetch(`/api/chat/${chatId}/ask`, {
+  const res = await apiFetch(`/api/chat/${chatId}/ask`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ question, chatId }),
