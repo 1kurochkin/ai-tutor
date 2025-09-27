@@ -5,6 +5,7 @@ import {generateText} from 'ai'
 import {MessageRole} from '@prisma/client'
 import {parseChatAIResponse} from '@/lib/ai'
 import {getUserFromToken} from "@/lib/auth";
+
 export interface ExtractedImage {
     page: number;
     x: number;
@@ -13,6 +14,20 @@ export interface ExtractedImage {
     height: number;
     base64: string;
 }
+
+export type TextsCoordinatesResponse = Array<{
+    page: number
+    searchString: string,
+    lines: Array<{
+        text: string,
+        x: number,
+        y: number,
+        width: number,
+        height: number
+    }>
+}>
+
+
 export async function POST(req: NextRequest) {
     console.log('CHAT ASK ROUTE API')
     // Check authentication
@@ -119,9 +134,38 @@ You can also see this illustrated in the diagram.
         console.log('Raw AI response:', response.text)
 
         // Parse the response to extract annotations and clean text
-        const {cleanText, annotations, navigation} = parseChatAIResponse(
+        const {cleanText, annotations, highlightedText, navigation} = parseChatAIResponse(
             response.text,
         )
+
+        // Get exact coords of the highlighted text if any
+        console.log("Get exact coords of the highlighted text if any")
+        if (highlightedText.length) {
+            const pdfFile = await fetch(chat.file.url).then(res => res.blob());
+            const formData = new FormData()
+            // @ts-ignore
+            formData.append("file", pdfFile);
+            formData.append("texts", JSON.stringify(highlightedText))
+            const textsMatches: TextsCoordinatesResponse = await fetch(
+                process.env.PDF_EXTRACTOR_URL! + "/texts-coords",
+                {
+                    method: "POST",
+                    body: formData,
+                }
+            ).then(res => res.json());
+            console.log(JSON.stringify(textsMatches), "textsCoordsResponse")
+            for (const {page, lines} of textsMatches) {
+                const highlightsAnnotations = lines.map(({text, ...coordinates}) => ({
+                    id: `highlight-${Date.now()}-${Math.random()}`,
+                    type: 'highlight' as "highlight",
+                    currentPage: page,
+                    coordinates,
+                    textReference: text
+                }))
+                annotations.push(...highlightsAnnotations)
+            }
+            console.log(annotations, "UPDATED ANNOTATIONS")
+        }
 
         // Save new message with clean text
         await prisma.message.create({
