@@ -1,38 +1,17 @@
-'use server'
+import {Chat} from '@prisma/client'
+import {apiFetch} from "@/lib/auth";
+import {toast} from "sonner";
 
-import { cookies } from 'next/headers'
-import jwt from 'jsonwebtoken'
-import { prisma } from '@/lib/prisma'
-import { Chat } from '@prisma/client'
-import { redirect } from 'next/navigation'
-
-export const getChatsHandler = async (
-  id?: string,
-): Promise<Partial<Chat>[]> => {
-  console.log('getChatsHandler', id)
-  const cookieStore = await cookies()
-  const token = cookieStore.get('token')?.value
-
-  if (!token) {
-    redirect('/')
+export const getChatsHandler = async (): Promise<Chat[]> => {
+  console.log('getChatsHandler')
+  const res = await apiFetch(`/api/chat/list`)
+  const data = await res.json()
+  console.log('askChatHandler DATA', data)
+  if (!res.ok) {
+    toast(data.error || 'Failed to get chats. Please try again later.')
+    throw new Error(
+        data.error || 'Failed to ask chat. Please try again later.',
+    )
   }
-
-  let payload: { userId: string }
-  try {
-    payload = jwt.verify(token, process.env.JWT_SECRET!) as {
-      userId: string
-    }
-  } catch (err) {
-    console.error('Invalid token', err)
-    throw new Error('Unauthorized: Invalid token')
-  }
-  return prisma.chat.findMany({
-    where: {
-      userId: payload.userId,
-      ...(id && { id }),
-    },
-    // Select fields only if not including relations
-    select: { id: true, title: true, ...(id && { file: true }) },
-    orderBy: { createdAt: 'desc' },
-  })
+  return data
 }
