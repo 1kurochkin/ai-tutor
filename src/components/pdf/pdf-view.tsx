@@ -5,7 +5,6 @@ import {useCallback, useEffect, useRef, useState} from 'react'
 import {toast} from 'sonner'
 import PdfViewControls from '@/components/pdf/pdf-view-controls'
 import {PDFDocumentProxy, PDFPageProxy} from 'pdfjs-dist'
-import {findTextCoordinates} from "@/lib/pdf/get-text-coords";
 import {annotatePDF} from "@/lib/pdf/annotate";
 
 const PDFDocument = dynamic(
@@ -56,6 +55,9 @@ const PdfView = ({url, className, redirectPage, annotations = []}: PdfView2Props
     const [renderPDFUrl, setRenderPDFUrl] = useState(url)
     const containerRef = useRef<HTMLDivElement>(null)
     const lastAnnotationsRef = useRef<string>('')
+    // const canvasRef = useRef<HTMLCanvasElement | null>(null)
+    const [canvasSize, setCanvasSize] = useState<{width: number, height: number} | null>(null)
+
     // Fetch PDF bytes once
     useEffect(() => {
         let canceled = false
@@ -83,33 +85,33 @@ const PdfView = ({url, className, redirectPage, annotations = []}: PdfView2Props
         const applyAnnotations = async () => {
             console.log("applyAnnotations")
             try {
-                const updatedAnnotations: Annotation[] = []
+                // const updatedAnnotations: Annotation[] = []
+                //
+                // for (const ann of annotations) {
+                //     const page = await pdf.getPage(ann.currentPage)
+                //
+                //     if (page && ann) {
+                //         if (ann.type === "highlight") {
+                //             const coordinates = await findTextCoordinates(page, ann.textReference!, viewport.scale)
+                //             updatedAnnotations.push({...ann, coordinates})
+                //         } else {
+                //             updatedAnnotations.push(ann)
+                //         }
+                //
+                //     }
+                // }
+                // console.log("updatedAnnotations", updatedAnnotations)
+                // if (!updatedAnnotations.length) return
 
-                for (const ann of annotations) {
-                    const page = await pdf.getPage(ann.currentPage)
-
-                    if (page && ann) {
-                        if (ann.type === "highlight") {
-                            const coordinates = await findTextCoordinates(page, ann.textReference!, viewport.scale)
-                            updatedAnnotations.push({...ann, coordinates})
-                        } else {
-                            updatedAnnotations.push(ann)
-                        }
-
-                    }
-                }
-                console.log("updatedAnnotations", updatedAnnotations)
-                if (!updatedAnnotations.length) return
-
-                const annotatedPdf = await annotatePDF(pdfBytes, updatedAnnotations)
+                const annotatedPdf = await annotatePDF(pdfBytes, annotations, canvasSize!)
                 // @ts-ignore
                 const blob = new Blob([annotatedPdf], {type: 'application/pdf'})
-                const annotatedUrl = URL.createObjectURL(blob)
-                console.log("annotatedUrl", annotatedUrl)
+                const annotatedPDFUrl = URL.createObjectURL(blob)
+                console.log("annotatedUrl", annotatedPDFUrl)
                 // Revoke old URL if any
                 if (renderPDFUrl.startsWith('blob:')) URL.revokeObjectURL(renderPDFUrl)
 
-                setRenderPDFUrl(annotatedUrl)
+                setRenderPDFUrl(annotatedPDFUrl)
             } catch (err) {
                 console.error('Failed to apply annotations', err)
                 toast('Failed to apply annotations!')
@@ -147,11 +149,24 @@ const PdfView = ({url, className, redirectPage, annotations = []}: PdfView2Props
     }
 
     const handlePageRender = useCallback((page: PDFPageProxy) => {
-        const viewportObj = page.getViewport({scale: 1})
+        const viewportObj = page.getViewport({ scale: 1 })
         const containerWidth = containerRef.current?.clientWidth || 800
         const scale = containerWidth / viewportObj.width
 
-        setViewport({width: viewportObj.width * scale, height: viewportObj.height * scale, scale})
+        const canvas = document.querySelector<HTMLCanvasElement>(
+            `.react-pdf__Page__canvas`
+        )
+        if (canvas) {
+            setCanvasSize({
+                width: canvas.offsetWidth,
+                height: canvas.offsetHeight,
+            })
+        }
+        setViewport({
+            width: viewportObj.width * scale,
+            height: viewportObj.height * scale,
+            scale
+        })
     }, [])
 
     const onClickNext = () => setCurrentPage(prev => Math.min(totalPages, prev + 1))
@@ -175,6 +190,7 @@ const PdfView = ({url, className, redirectPage, annotations = []}: PdfView2Props
                     className="shadow-md"
                 >
                     <PDFPage
+                        // canvasRef={pdfCanvasRef}
                         pageNumber={currentPage}
                         width={viewport.width}
                         // @ts-ignore
