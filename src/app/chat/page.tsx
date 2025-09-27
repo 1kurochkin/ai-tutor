@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import createChatHandler from '@/handlers/create-chat-handler'
 import PdfUpload from '@/components/pdf/pdf-upload'
+import FullScreenPreloader from "@/components/full-screen-preloader";
 
 export default function Chat() {
   const [fileUploadLoading, setFileUploadLoading] = useState(false)
@@ -15,7 +16,6 @@ export default function Chat() {
     try {
       const data = await createChatHandler(file)
       console.log(data, 'handleFileUpload')
-      router.refresh()
       setTimeout(() => {
         router.push(`/chat/${data.chatId}`)
       }, 300)
@@ -25,10 +25,20 @@ export default function Chat() {
     setFileUploadLoading(false)
   }
 
+  if(fileUploadLoading) {
+    return (
+        <div className={"h-full flex flex-col justify-center items-center"}>
+          <div>
+            <span>AI analyzing your PDF...</span>
+            <FullScreenPreloader className={'relative'}/>
+          </div>
+        </div>
+    )
+  }
   return (
-    <PdfUpload
-      loading={fileUploadLoading}
-      onFileUpload={handleFileUpload}
-    />
+      <PdfUpload
+          loading={fileUploadLoading}
+          onFileUpload={handleFileUpload}
+        />
   )
 }
