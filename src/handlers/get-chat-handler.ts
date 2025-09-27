@@ -1,46 +1,19 @@
-'use server'
-
-import {cookies} from 'next/headers'
-import jwt from 'jsonwebtoken'
-import {prisma} from '@/lib/prisma'
-import {redirect} from 'next/navigation'
+"use client"
+import {apiFetch} from "@/lib/auth";
+import {toast} from "sonner";
 
 const getChatHandler = async (chatId: string) => {
-    console.log('getChatHandler', chatId)
-    const cookieStore = await cookies()
-    const token = cookieStore.get('token')?.value
-
-    if (!token) {
-        redirect('/')
+    console.log('getChatHandler')
+    const res = await apiFetch(`/api/chat/${chatId}`)
+    const data = await res.json()
+    console.log('getChatHandler DATA', data)
+    if (!res.ok) {
+        toast(data.error || 'Failed to get chat. Please try again later.')
+        throw new Error(
+            data.error || 'Failed to get chat. Please try again later.',
+        )
     }
-
-    let payload: { userId: string }
-    try {
-        payload = jwt.verify(token, process.env.JWT_SECRET!) as {
-            userId: string
-        }
-    } catch (err) {
-        console.error('Invalid token', err)
-        throw new Error('Unauthorized: Invalid token')
-    }
-    return prisma.chat.findUnique({
-        where: {
-            id: chatId,
-            userId: payload.userId
-        },
-        include: {
-            file: {
-                select: {
-                    id: true,
-                    originalName: true,
-                    url: true,
-                    pageCount: true,
-                    content: true,
-                },
-            },
-            messages: true,
-        },
-    })
+    return data
 }
 
 export default getChatHandler
