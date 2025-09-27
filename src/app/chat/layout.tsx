@@ -1,14 +1,22 @@
-'use server'
-import React from 'react'
+"use client"
+import React, {useEffect, useState} from 'react'
 import Sidebar from '@/components/sidebar'
-import { getChatsHandler } from '@/handlers/get-chats-handler'
+import {getChatsHandler} from '@/handlers/get-chats-handler'
+import {Chat} from "@prisma/client";
 
-export default async function ChatLayout({
+export default function ChatLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const chats = await getChatsHandler()
+    const [chats, setChats] = useState<Chat[]>([])
+    useEffect(() => {
+        (async () => {
+            const chats = await getChatsHandler()
+            console.log(chats)
+            setChats(chats)
+        })()
+    }, []);
 
   return (
     <main className="h-screen flex overflow-hidden">
