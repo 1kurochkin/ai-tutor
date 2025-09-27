@@ -253,11 +253,18 @@ app.post("/texts-coords", upload.single("file"), async (req, res) => {
 
 function normalizeText(s) {
     return (s || "")
-        .replace(/\u00A0/g, " ")    // NBSP → space
-        .replace(/\s+/g, " ")       // collapse multiple spaces
-        .replace(/[’‘]/g, "'")      // curly → straight apostrophe
-        .replace(/[“”]/g, '"')      // curly → straight quotes
-        .replace(/'(?=\s)/g, "")    // remove apostrophe before space ("customers' challenging" → "customers challenging")
+        .replace(/\u00A0/g, " ")              // NBSP → space
+        .replace(/\s+/g, " ")                 // collapse multiple spaces
+        .replace(/[’‘]/g, "'")                // curly → straight apostrophe
+        .replace(/[“”]/g, '"')                // curly → straight quotes
+        .replace(/'(?=\s)/g, "")              // remove apostrophe before space ("customers' challenging" → "customers challenging")
+        .replace(/\s*-\s*/g, "-")             // remove spaces around hyphens
+        .replace(/\s*:\s*/g, ":")             // remove spaces around colons
+        .replace(/\s*;\s*/g, ";")             // remove spaces around semicolons
+        .replace(/\s*,\s*/g, ", ")            // normalize commas
+        .replace(/\s*\.\s*/g, ". ")           // normalize periods
+        .replace(/\s*\?\s*/g, "?")            // normalize question marks
+        .replace(/\s*!\s*/g, "!")             // normalize exclamation marks
         .trim()
         .toLowerCase();
 }
