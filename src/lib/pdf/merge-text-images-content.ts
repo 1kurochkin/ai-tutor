@@ -1,15 +1,15 @@
-import {ExtractedImage} from "@/app/api/chat/[id]/ask/route";
+import {ImagesCoordinatesResponse} from "@/app/api/chat/[id]/ask/route";
 import {PDFExtractionResult} from "@/lib/pdf/parse-text";
 
 export interface PDFPageContent {
     page: number;
     text: string;
-    images: Omit<ExtractedImage, "page" | "base64">[];
+    images: Omit<ImagesCoordinatesResponse, "page" | "base64">[];
 }
 
 export function mergeTextImagesConent(
     pdfParsed: PDFExtractionResult,
-    images: ExtractedImage[]
+    images: ImagesCoordinatesResponse[]
 ): PDFExtractionResult {
     // Group images by page
     const grouped = groupByPage(images)
@@ -29,8 +29,8 @@ export function mergeTextImagesConent(
     return pdfParsed
 }
 
-function groupByPage(images: ExtractedImage[]): Map<number, ExtractedImage[]> {
-    const map = new Map<number, ExtractedImage[]>()
+function groupByPage(images: ImagesCoordinatesResponse[]): Map<number, ImagesCoordinatesResponse[]> {
+    const map = new Map<number, ImagesCoordinatesResponse[]>()
     for (const img of images) {
         if (!map.has(img.page)) map.set(img.page, [])
         map.get(img.page)!.push(img)
