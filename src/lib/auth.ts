@@ -48,3 +48,14 @@ export async function getUserFromToken(token: string) {
         return null;
     }
 }
+
+export async function apiFetch(url: string, options: RequestInit = {}) {
+    const res = await fetch(url, { ...options, credentials: "include" });
+    console.log(res, "RESPONSE")
+    if (res.status === 401) {
+        console.log("LOGOUT!!!!!!!!")
+        await fetch("/api/auth/logout", { method: "POST" });
+        return res;
+    }
+    return res;
+}
