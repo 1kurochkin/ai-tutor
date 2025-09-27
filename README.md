@@ -109,7 +109,7 @@ OPENAI_API_KEY="sk-your_openai_api_key_here"
 BLOB_READ_WRITE_TOKEN="vercel_blob_read_write_token_here"
 
 # PDF-extractor endpoint 
-PDF_EXTRACTOR_ENDPOINT="pdf-extractor-endpoint"
+PDF_EXTRACTOR_URL="pdf-extractor-endpoint"
 ```
 
 ### 4. Database Setup
@@ -183,13 +183,13 @@ npm start
 
 The service will run on `http://localhost:3001` (separate from the main app).
 
-### 5. Update Main App Configuration
+#### 5. Update Main App Configuration
 
 Once service started, update your main application's PDF extractor URL in:
 
 `.env` config:
 ```env
-PDF_EXTRACTOR_ENDPOINT="http://localhost:3001/extract"
+PDF_EXTRACTOR_URL="http://localhost:3001"
 ```
 
 ---
@@ -244,7 +244,7 @@ Once deployed, update your main application's PDF extractor URL in:
 
 `.env` config:
 ```env
-PDF_EXTRACTOR_ENDPOINT="https://your-pdf-extractor.railway.app/extract"
+PDF_EXTRACTOR_URL="https://your-pdf-extractor.railway.app/extract"
 ```
 
 ---
@@ -320,7 +320,7 @@ DATABASE_URL="your_production_database_url"
 JWT_SECRET="your_production_jwt_secret"
 OPENAI_API_KEY="your_openai_api_key"
 BLOB_READ_WRITE_TOKEN="your_vercel_blob_token"
-PDF_EXTRACTOR_ENDPOINT="pdf-extractor-endpoint"
+PDF_EXTRACTOR_URL="pdf-extractor-endpoint"
 ```
 
 ---
