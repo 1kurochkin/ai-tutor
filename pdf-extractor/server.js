@@ -6,6 +6,8 @@ import path from "path";
 import {exec} from "child_process";
 import {promisify} from "util";
 import {XMLParser} from "fast-xml-parser";
+import * as cheerio from "cheerio";
+
 
 const execAsync = promisify(exec);
 const app = express();
@@ -41,6 +43,8 @@ app.post("/images-coords", upload.single("file"), async (req, res) => {
 
         for (const p of pages) {
             const pageNumber = parseInt(p["@_number"], 10) || 1;
+            const pageSize = {width: parseInt(p["@_width"]), height: parseInt(p["@_height"])}
+
             const imgs = Array.isArray(p.image)
                 ? p.image
                 : p.image
@@ -64,6 +68,7 @@ app.post("/images-coords", upload.single("file"), async (req, res) => {
                     const base64 = buffer.toString("base64");
 
                     images.push({
+                        pageSize,
                         page: pageNumber,
                         x: parseFloat(img["@_left"]) || 0,
                         y: parseFloat(img["@_top"]) || 0,
@@ -92,9 +97,8 @@ app.post("/images-coords", upload.single("file"), async (req, res) => {
     }
 });
 
+
 app.post("/texts-coords", upload.single("file"), async (req, res) => {
-    const { texts } = req.body; // array of texts to find
-    console.log(texts, "texts")
     const textsArray = req.body.texts ? JSON.parse(req.body.texts) : [];
     if (!Array.isArray(textsArray)) {
         return res.status(400).json({ error: "Provide an array of texts in body" });
@@ -110,67 +114,128 @@ app.post("/texts-coords", upload.single("file"), async (req, res) => {
         await execAsync(`pdftohtml -xml "${pdfPath}" "${xmlPath}"`);
         const xml = await fs.readFile(xmlPath, "utf-8");
 
-        const parser = new XMLParser({ ignoreAttributes: false });
-        const json = parser.parse(xml);
+        // Load XML with cheerio (xmlMode preserves structure)
+        const $ = cheerio.load(xml, { xmlMode: true, decodeEntities: true });
 
-        const pages = Array.isArray(json.pdf2xml?.page)
-            ? json.pdf2xml.page
-            : json.pdf2xml?.page
-                ? [json.pdf2xml.page]
-                : [];
+        const pages = [];
+        $("page").each((pi, pageEl) => {
+            const pageNumber = parseInt($(pageEl).attr("number"), 10) || pi + 1;
+            const structuredLines = [];
+            const pageSize = {width: parseInt($(pageEl).attr("width")), height: parseInt($(pageEl).attr("height"))}
+
+            // loop through <text> nodes and get rendered text
+            $(pageEl).find("text").each((ti, t) => {
+                // .text() returns textContent (strips tags like <b>)
+                let raw = $(t).text() || "";
+                // normalize NBSP and whitespace, collapse multiple spaces to one, trim
+                raw = raw.replace(/\u00A0/g, " ").replace(/\s+/g, " ").trim();
+                if (!raw) return; // skip whitespace-only nodes
+
+                const left = parseFloat($(t).attr("left")) || 0;
+                const top = parseFloat($(t).attr("top")) || 0;
+                const width = parseFloat($(t).attr("width")) || 0;
+                const height = parseFloat($(t).attr("height")) || 0;
+
+                structuredLines.push({
+                    text: raw,
+                    x: left,
+                    y: top,
+                    width,
+                    height,
+                });
+            });
+
+            // Sort reading order: top (y) then left (x) — small threshold for same line
+            structuredLines.sort((a, b) => {
+                const rowDiff = a.y - b.y;
+                if (Math.abs(rowDiff) > 3) return rowDiff; // different rows
+                return a.x - b.x; // same row, left-to-right
+            });
+
+            pages.push({ pageNumber, structuredLines, pageSize });
+        });
 
         const result = [];
 
         for (const p of pages) {
-            const pageNumber = parseInt(p["@_number"], 10) || 1;
-            const lines = Array.isArray(p.text)
-                ? p.text
-                : p.text
-                    ? [p.text]
-                    : [];
-
-            // Convert XML text nodes into structured array
-            const structuredLines = []
-            for (const l of lines) {
-                if (!l["#text"] || Number.isInteger(l["#text"])) continue;
-                const lineText = l["#text"]?.trim();  // <-- safely get text and trim
-                structuredLines.push({
-                    text: lineText,
-                    x: parseFloat(l["@_left"]) || 0,
-                    y: parseFloat(l["@_top"]) || 0,
-                    width: parseFloat(l["@_width"]) || 0,
-                    height: parseFloat(l["@_height"]) || 0,
-                });
-            }
+            const pageNumber = p.pageNumber;
+            const lines = p.structuredLines;
 
             for (const searchString of textsArray) {
-                let searchLower = searchString.toLowerCase();
+                const searchLower = normalizeText(searchString).toLowerCase();
+                if (!searchLower) continue;
 
-                // slide over lines
-                for (let i = 0; i < structuredLines.length; i++) {
-                    let combinedText = "";
-                    let j = i;
-                    const linesToReturn = [];
+                // sliding window over lines
+                for (let i = 0; i < lines.length; i++) {
+                    let combined = "";
+                    const windowLines = [];
 
-                    while (j < structuredLines.length && combinedText.length < searchLower.length) {
-                        combinedText += structuredLines[j].text + " ";
-                        linesToReturn.push(structuredLines[j]);
-                        j++;
-                    }
+                    // limit the window to a reasonable number of lines to protect performance
+                    // (adjust maxWindow if your phrases can be >10 lines)
+                    const maxWindow = 10;
+                    for (let j = i; j < Math.min(lines.length, i + maxWindow); j++) {
+                        if (windowLines.length > 0) combined += " "; // preserve separation
+                        combined += lines[j].text;
+                        windowLines.push(lines[j]);
 
-                    if (combinedText.toLowerCase().includes(searchLower)) {
-                        // Match found: return each line with coordinates
-                        result.push({
-                            page: pageNumber,
-                            searchString,
-                            lines: linesToReturn
-                        });
-                        i = j - 1; // skip lines already matched
-                        break; // move to next searchText
-                    }
-                }
-            }
-        }
+                        const combinedNorm = normalizeText(combined);
+
+                        if (combinedNorm.includes(searchLower)) {
+                            const matchStart = combinedNorm.indexOf(searchLower);
+                            const matchEnd = matchStart + searchLower.length;
+
+                            let cursor = 0;
+                            const matchLines = [];
+                            const partialBoxes = [];
+
+                            for (let k = 0; k < windowLines.length; k++) {
+                                const L = windowLines[k];
+                                const textLen = L.text.length;
+                                const segStart = cursor;
+                                const segEnd = cursor + textLen;
+
+                                const overlapStart = Math.max(matchStart, segStart);
+                                const overlapEnd = Math.min(matchEnd, segEnd);
+
+                                if (overlapStart < overlapEnd && textLen > 0) {
+                                    matchLines.push(L);
+
+                                    const relStart = overlapStart - segStart;
+                                    const relEnd = overlapEnd - segStart;
+
+                                    const fracStart = relStart / textLen;
+                                    const fracEnd = relEnd / textLen;
+
+                                    const subX = L.x + fracStart * L.width;
+                                    const subW = Math.max(1, (fracEnd - fracStart) * L.width);
+
+                                    partialBoxes.push({
+                                        x: subX,
+                                        y: L.y,
+                                        width: subW,
+                                        height: L.height,
+                                    });
+                                }
+
+                                cursor = segEnd + 1; // account for added space
+                            }
+
+                            result.push({
+                                page: pageNumber,
+                                pageSize: p.pageSize,
+                                searchString,
+                                lines: matchLines,
+                            });
+
+// stop scanning further lines for this search string on this page
+                            i = lines.length; // force exit from outer for (i)
+                            break;
+                        }
+
+                    } // end j window
+                } // end i lines
+            } // end each searchString
+        } // end pages
 
         res.json(result);
     } catch (err) {
@@ -186,4 +251,17 @@ app.post("/texts-coords", upload.single("file"), async (req, res) => {
     }
 });
 
-app.listen(3001, () => console.log("Server running on port 3001"));
+function normalizeText(s) {
+    return (s || "")
+        .replace(/\u00A0/g, " ")    // NBSP → space
+        .replace(/\s+/g, " ")       // collapse multiple spaces
+        .replace(/[’‘]/g, "'")      // curly → straight apostrophe
+        .replace(/[“”]/g, '"')      // curly → straight quotes
+        .replace(/'(?=\s)/g, "")    // remove apostrophe before space ("customers' challenging" → "customers challenging")
+        .trim()
+        .toLowerCase();
+}
+
+const PORT = process.env.PORT || 3001
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+

@@ -6,8 +6,12 @@ import {MessageRole} from '@prisma/client'
 import {parseChatAIResponse} from '@/lib/ai'
 import {getUserFromToken} from "@/lib/auth";
 
-export interface ExtractedImage {
+export interface ImagesCoordinatesResponse {
     page: number;
+    pageSize: {
+        width: number,
+        height: number
+    },
     x: number;
     y: number;
     width: number;
@@ -18,6 +22,10 @@ export interface ExtractedImage {
 export type TextsCoordinatesResponse = Array<{
     page: number
     searchString: string,
+    pageSize: {
+        width: number,
+        height: number
+    },
     lines: Array<{
         text: string,
         x: number,
@@ -76,16 +84,19 @@ Always return two parts in your response:
 ## Annotation Commands
 - [NAVIGATE:page_number]
 - [HIGHLIGHT:page_number:exact_text]
-- [CIRCLE:page_number:x:y:width:height]
+- [CIRCLE:page_number:x:y:width:height:page_width:page_height]
 
 ### Annotation Rules
-1. Always use **exact text from the PDF** (case-sensitive) for highlights.  
-2. Keep text selections concise (1–20 words).  
-3. Always include **[NAVIGATE:page_number]** when you use HIGHLIGHT or CIRCLE.  
-4. For images:
+1. Always use **normalized text extracted from the PDF** for highlights:
+   - Collapse multiple spaces into a single space.  
+   - Remove stray spaces before/after punctuation (e.g. \`"Self - Awareness :" → "Self-Awareness:"\`).  
+   - Keep case exactly as in the PDF.  
+2. Highlights must match **contiguous text spans** from the normalized PDF (no paraphrasing).  
+3. Keep highlight selections concise (1–20 words).  
+4. Always include **[NAVIGATE:page_number]** when you use HIGHLIGHT or CIRCLE.  
+5. For images:
    - Use the provided **description field** to understand what the image contains.  
-   - When relevant, annotate the image with its **objectNumber** using [CIRCLE:page_number:x:y:width:height].  
-   - Never invent new object numbers.  
+   - When relevant, annotate the image using [CIRCLE:page_number:x:y:width:height:page_width:page_height].  
 
 ## Response Rules
 1. Responses must include BOTH a natural language answer + annotation(s).  
@@ -102,7 +113,7 @@ Assistant:
 "A virus is a microscopic infectious agent that replicates inside living hosts.  
 [NAVIGATE:23] [HIGHLIGHT:23:infectious agent that replicates]  
 You can also see this illustrated in the diagram.  
-[CIRCLE:23:300:400:200"]"
+[CIRCLE:23:300:400:200:600:900"]"
 `
 
     // Build messages array for OpenAI
@@ -154,11 +165,12 @@ You can also see this illustrated in the diagram.
                 }
             ).then(res => res.json());
             console.log(JSON.stringify(textsMatches), "textsCoordsResponse")
-            for (const {page, lines} of textsMatches) {
+            for (const {page, pageSize, lines} of textsMatches) {
                 const highlightsAnnotations = lines.map(({text, ...coordinates}) => ({
                     id: `highlight-${Date.now()}-${Math.random()}`,
                     type: 'highlight' as "highlight",
                     currentPage: page,
+                    pageSize,
                     coordinates,
                     textReference: text
                 }))
