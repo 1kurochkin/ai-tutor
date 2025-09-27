@@ -3,11 +3,13 @@ import {Annotation} from "@/components/pdf/pdf-view";
 export interface ParsedAIResponse {
     cleanText: string;
     annotations: Annotation[];
+    highlightedText: string[]
     navigation?: number;
 }
 
 export function parseChatAIResponse(response: string): ParsedAIResponse {
     const annotations: Annotation[] = [];
+    const highlightedText: string[] = [];
     let navigation: number | undefined = undefined;
     let cleanText = response;
 
@@ -22,18 +24,8 @@ export function parseChatAIResponse(response: string): ParsedAIResponse {
     // Parse HIGHLIGHT commands
     const highlightRegex = /\[HIGHLIGHT:(\d+):([^\]]+)]/g;
     while ((match = highlightRegex.exec(response)) !== null) {
-        const currentPage = parseInt(match[1], 10);
         const exactText = match[2];
-
-        annotations.push({
-            id: `highlight-${Date.now()}-${Math.random()}`,
-            type: 'highlight',
-            currentPage,
-            // instead of coordinates, we store the exact text to find on the client
-            textReference: exactText,
-            color: 'yellow',
-        });
-
+        highlightedText.push(exactText);
         cleanText = cleanText.replace(match[0], '');
     }
 
@@ -63,6 +55,7 @@ export function parseChatAIResponse(response: string): ParsedAIResponse {
 
     return {
         cleanText,
+        highlightedText,
         annotations,
         navigation,
     };

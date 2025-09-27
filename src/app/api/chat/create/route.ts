@@ -65,26 +65,27 @@ export async function POST(request: NextRequest) {
         console.log('FILE UPLOADED URL-', uploadedFileUrl)
 
         // Extract data from PDF
-        let pdfTextExtractionResult:PDFExtractionResult
+        let pdfTextExtractionResult: PDFExtractionResult
         let pdfImagesExtractionResult: ExtractedImage[] = []
 
         try {
             pdfTextExtractionResult = await parseTextFromPDF(file)
             const response = await fetch(
-                process.env.PDF_EXTRACTOR_ENDPOINT!,
+                process.env.PDF_EXTRACTOR_URL! + "/images-coords",
                 {
                     method: "POST",
                     body: formData,
                 }
             );
-           pdfImagesExtractionResult = await response.json().then(data => data.images);
+            pdfImagesExtractionResult = await response.json().then(data => data.images);
             console.log(pdfTextExtractionResult, "pdfTextExtractionResult")
             console.log(pdfImagesExtractionResult, "pdfImagesExtractionResul")
         } catch (error) {
             console.error('PDF parsing failed:', error)
         }
 
-        if(pdfImagesExtractionResult.length) {
+
+        if (pdfImagesExtractionResult.length) {
             // AI Describe images from PDF
             let describedImages: Omit<ExtractedImage, "base64">[] = []
             try {
@@ -118,7 +119,7 @@ Example output:
                     ],
                 })
 
-                const aiTextToJson: {description:string}[] = JSON.parse(response.text)
+                const aiTextToJson: { description: string }[] = JSON.parse(response.text)
                 describedImages = pdfImagesExtractionResult.map(({base64, ...restExImg}, idx) => ({
                     ...restExImg,
                     description: aiTextToJson[idx].description
