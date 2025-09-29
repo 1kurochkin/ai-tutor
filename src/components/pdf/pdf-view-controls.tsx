@@ -6,21 +6,29 @@ type PdfViewControlsProps = {
   disabledPrev: boolean
   disabledNext: boolean
   text: string
+  className?: string
 }
 
 const PdfViewControls = (props: PdfViewControlsProps) => {
-  const { disabledPrev, disabledNext, onClickPrev, onClickNext, text } =
-    props
+  const {
+    disabledPrev,
+    disabledNext,
+    onClickPrev,
+    onClickNext,
+    text,
+    className,
+  } = props
 
   return (
-    <div className="flex items-center justify-between p-4 bg-white border-b">
+    <div
+      className={`flex items-center justify-between gap-4 bg-white ${className}`}>
       <Button onClick={onClickPrev} disabled={disabledPrev}>
         Prev
       </Button>
-      <span>{text}</span>
       <Button onClick={onClickNext} disabled={disabledNext}>
         Next
       </Button>
+      <span>{text}</span>
     </div>
   )
 }

@@ -1,12 +1,12 @@
 'use client'
-import React, {useEffect, useRef} from 'react'
-import {useForm} from 'react-hook-form'
-import {Input} from '@/components/ui/input'
-import {Button} from '@/components/ui/button'
+import React, { useEffect, useRef } from 'react'
+import { useForm } from 'react-hook-form'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import Message from '@/components/chat/message'
-import {useVoiceInput} from '@/hooks/useVoiceInput'
-import {MessagesLocalStateType} from "@/app/chat/[slug]/page";
-import {Annotation} from "@/components/pdf/pdf-view";
+import { useVoiceInput } from '@/hooks/useVoiceInput'
+import { MessagesLocalStateType } from '@/app/chat/[slug]/page'
+import { Annotation } from '@/components/pdf/pdf-view'
 
 export type ChatProps = {
   className?: string
@@ -47,10 +47,10 @@ const Chat = ({
 
   return (
     <div
-      className={`flex flex-col justify-between items-end border-l-2 border-black border-dashed p-4 ${className}`}>
+      className={`flex h-screen flex-col justify-between items-end border-l-1 border-black border-dashed p-2 gap-2 ${className}`}>
       <div
         ref={containerRef}
-        className="flex flex-col gap-4 overflow-scroll h-[88vh] pb-4">
+        className="flex flex-col gap-4 overflow-auto pb-4">
         {messages?.map(message => (
           <Message
             setRedirectPage={
@@ -73,7 +73,7 @@ const Chat = ({
         ))}
       </div>
       <form
-        className={'flex gap-2'}
+        className={'flex items-center gap-2 w-full'}
         onSubmit={handleSubmit(submitHandler)}>
         <Input
           className={'resize-none'}
