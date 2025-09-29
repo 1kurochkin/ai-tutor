@@ -1,5 +1,5 @@
 'use client'
-import { createContext, useCallback, useMemo, useState } from 'react'
+import { createContext, useMemo, useState } from 'react'
 import { Chat } from '@prisma/client'
 
 interface AppContextProps {
