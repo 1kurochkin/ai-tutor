@@ -163,9 +163,7 @@ Example output:
             },
         })
         console.log('✅ CHAT created:', chat.id)
-        return NextResponse.json({
-            chatId: chat.id,
-        })
+        return NextResponse.json(chat)
     } catch
         (error) {
         console.error('Upload error:', error)
