@@ -2,29 +2,26 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Chat } from '@prisma/client'
-import { usePathname, useRouter } from 'next/navigation'
 import { MenuIcon } from 'lucide-react'
 import { useState } from 'react'
-import { logoutHandler } from '@/handlers/logout.handler'
 
-export default function Sidebar({ chats }: { chats: Partial<Chat>[] }) {
-  console.log(chats, 'Sidebar')
-  const pathname = usePathname()
-  const router = useRouter()
+export default function Sidebar(props: {
+  email: string
+  chats: Partial<Chat>[]
+  activeChatId: string
+  logout: () => void
+}) {
+  const { email, chats, activeChatId, logout } = props
+  console.log(JSON.stringify(props), 'Sidebar')
   const [isOpen, setIsOpen] = useState(true)
   const handleToggleSidebar = () => {
     console.log('handleToggleSidebar')
     setIsOpen(prev => !prev)
   }
 
-  const handleLogout = async () => {
-    await logoutHandler()
-    router.replace('/home')
-  }
-
   return (
     <div
-      className={`${!isOpen ? 'w-20' : 'w-56'} bg-black text-white flex flex-col transition-all duration-300 p-4 gap-4`}>
+      className={`${!isOpen ? 'w-20' : 'w-65'} bg-black text-white flex flex-col transition-all duration-300 p-4 gap-4`}>
       <div className={'flex justify-between items-center'}>
         {isOpen && (
           <Button asChild variant="outline">
@@ -44,9 +41,7 @@ export default function Sidebar({ chats }: { chats: Partial<Chat>[] }) {
               <Button
                 asChild
                 key={chat.id}
-                className={
-                  pathname.includes(chat.id || '') ? 'bg-gray-700' : ''
-                }>
+                className={`hover:bg-white hover:text-black ${activeChatId === chat.id && 'cursor-default text-black bg-white hover:bg-white'}`}>
                 <Link href={`/chat/${chat.id}`}>
                   {chat.title || 'Untitled Chat'}
                 </Link>
@@ -54,8 +49,10 @@ export default function Sidebar({ chats }: { chats: Partial<Chat>[] }) {
             ))}
           </div>
 
+          <span className={'text-xs text-center'}>{email}</span>
+
           <Button
-            onClick={handleLogout}
+            onClick={logout}
             className={'w-full'}
             type="submit"
             variant="outline">
