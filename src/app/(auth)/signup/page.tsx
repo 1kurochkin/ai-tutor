@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
 import signupHandler from '@/handlers/signup.handler'
 import { useRouter } from 'next/navigation'
+import useAppContext from "@/hooks/useAppContext";
 
 const SignupFormSchema = z
   .object({
@@ -29,6 +30,7 @@ const SignupFormSchema = z
 export type SignupFormValues = z.infer<typeof SignupFormSchema>
 
 export default function Signup() {
+  const {setEmail} = useAppContext()
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
@@ -43,6 +45,7 @@ export default function Signup() {
     try {
       console.log(data, 'SIGNUP')
       await signupHandler(data)
+      setEmail(data.email)
       toast('Account has been created!')
       reset()
       router.replace('/chat')

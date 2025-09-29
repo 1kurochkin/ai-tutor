@@ -2,8 +2,9 @@
 
 import { toast } from 'sonner'
 import {apiFetch} from "@/lib/auth";
+import {Chat} from "@prisma/client";
 
-const createChatHandler = async (file: File) => {
+const createChatHandler = async (file: File): Promise<Chat> => {
   console.log('createChatHandler')
   const formData = new FormData()
   formData.append('file', file)

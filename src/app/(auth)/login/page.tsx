@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
 import loginHandler from '@/handlers/login.handler'
 import { useRouter } from 'next/navigation'
+import useAppContext from "@/hooks/useAppContext";
 
 const LoginFormSchema = z.object({
   email: z.string().email(),
@@ -20,6 +21,7 @@ const LoginFormSchema = z.object({
 export type LoginFormValues = z.infer<typeof LoginFormSchema>
 
 export default function Login() {
+  const {setEmail} = useAppContext()
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
@@ -34,6 +36,7 @@ export default function Login() {
     try {
       console.log(data, 'Login')
       await loginHandler(data)
+      setEmail(data.email)
       reset()
       router.replace('/chat')
     } catch (e) {
